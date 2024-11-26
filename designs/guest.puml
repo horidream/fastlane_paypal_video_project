@@ -1,0 +1,32 @@
+@startuml
+title Guest User Payment Flow
+
+start
+
+:User visits payment page;
+:User enters email address;
+if (Is email valid?) then (yes)
+    :Trigger Fastlane lookup;
+    if (Is customer found?) then (yes)
+        :Display stored card fields;
+        :User can choose to pay as guest or use stored card;
+    else (no)
+        :Display card fields for guest payment;
+    endif
+else (no)
+    :Show error message for invalid email;
+    stop
+endif
+
+:User fills in payment details;
+:User clicks "Pay Now";
+
+:Process payment request;
+if (Is payment successful?) then (yes)
+    :Display success receipt;
+else (no)
+    :Show error message;
+endif
+
+stop
+@enduml

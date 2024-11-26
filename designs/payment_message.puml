@@ -1,0 +1,60 @@
+@startuml
+
+actor User
+participant "Payment UI" as UI
+participant "PayPal SDK" as PayPal
+participant "Fastlane SDK" as Fastlane
+participant "Server" as Server
+
+== Initialization ==
+UI -> Server: get_auth()
+Server --> UI: return client_token
+UI -> PayPal: init_paypal_script_tag(client_token)
+UI -> Fastlane: init_fastlane_methods()
+UI --> User: display payment options
+
+== Payment Flow ==
+alt Email Input
+    User -> UI: enter email
+    UI -> Fastlane: lookupCustomerByEmail()
+    
+    alt Existing Customer
+        Fastlane --> UI: return customer_context_id
+        UI -> Fastlane: triggerAuthenticationFlow()
+        Fastlane -> User: request OTP
+        
+        alt OTP Success
+            User -> Fastlane: provide OTP
+            Fastlane --> UI: authentication succeeded
+            UI --> User: show stored card details
+        else OTP Failed/Cancelled
+            UI --> User: treat as guest payer
+        end
+        
+    else New Customer
+        UI --> User: show guest payment form
+    end
+end
+
+alt Card Payment
+    User -> UI: enter card details
+    UI -> Fastlane: getPaymentToken()
+    Fastlane --> UI: return tokenize_response
+    UI -> Server: process_payment(token)
+    Server --> UI: payment response
+    UI --> User: display receipt
+end
+
+alt PayPal/Venmo Payment
+    User -> PayPal: click PayPal/Venmo button
+    UI -> Server: createOrder()
+    Server --> PayPal: order_id
+    PayPal -> User: PayPal/Venmo login flow
+    User -> PayPal: approve payment
+    PayPal -> UI: onApprove callback
+    UI -> Server: process_payment(order_id)
+    Server --> UI: payment response
+    UI --> User: display receipt
+end
+
+@enduml

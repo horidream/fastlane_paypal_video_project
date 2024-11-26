@@ -65,10 +65,11 @@ function get_auth() {
 // Initializes the PayPal script tag with the provided access token.
 function init_paypal_script_tag(data) {
     client_token = data.client_token;
-    client_id = "REPLACE_ME";
+    client_id =
+		"AWEZPHGw8u-HiSzJLrpMM612S6yBHsyg4g7rcK9ombOzQPIcRdJmaJ9eWm5pfSdJ8YLX14YQd3qY7Gyg";
     // Setting script tag attributes
     script_tag = document.createElement("script");
-    script_tag.src = `https://www.paypal.com/sdk/js?client-id=${client_id}&components=buttons,fastlane&enable-funding=venmo&disable-funding=card,paylater`;
+    script_tag.src = `https://www.sandbox.paypal.com/sdk/js?client-id=${client_id}&components=buttons,fastlane&enable-funding=venmo&disable-funding=card,paylater`;
     script_tag.setAttribute("data-sdk-client-token", client_token);
     document.head.appendChild(script_tag);
     script_tag.onload = init_paypal_payment_options;
@@ -88,8 +89,15 @@ function init_paypal_payment_options() {
 }
 // Initializes Fastlane methods and sets up event handlers.
 async function init_fastlane_methods() {
-    let fastlane = await window.paypal.Fastlane({});
-    fastlane.setLocale("en_us");
+    let fastlane = await window.paypal.Fastlane({
+        metadata:{
+            geoLocOverride: "US"
+        }
+    });
+    fastlane.setLocale("zh_us");
+    const f = window.f = fastlane;
+    let ori = f.events.apmSelected
+
     profile = fastlane.profile;
     FastlanePaymentComponent = fastlane.FastlanePaymentComponent;
     identity = fastlane.identity;
@@ -176,14 +184,19 @@ async function init_fastlane_methods() {
           let selected_card = card_selector.selectedCard;
           let selection_changed = card_selector.selectionChanged;
           //After user is done with the selection modal
+          console.log("card changed", selected_card);
           if (selection_changed) {
+            profile_data.card = selected_card;
             // selectedCard contains the new Card
           } else {
             // Selection modal was dismissed without selection
           }
     }
+    window.showCardSelector = show_card_selector;
     // Submit button to process payment
     function setup_payment_handler(FastlanePaymentComponent) {
+        console.log("setup payment handler", FastlanePaymentComponent);
+        window.FastlanePaymentComponent = FastlanePaymentComponent;
         payment_submit_button.addEventListener("click", async (event) => {
             ui_submit_button_clicked();
             console.log("Payment form requested to be submitted.");
@@ -226,9 +239,12 @@ function handle_email_input() {
 }
 // Fastlane lookup to decide if UI should be guest payer (if email not found)
 // or attempt for one-time-password (OTP) fastlane auth
+window.overrideContextId = "tokencc_bf_tc6jpr_9qk6m2_kksqqc_r87jtc_2dz";
 async function begin_fastlane_lookup() {
     lookup_response = await identity.lookupCustomerByEmail(email_input_element.value);
-    customer_context_id = lookup_response.customerContextId;
+    console.log("lookup response", lookup_response);
+    customer_context_id =
+		lookup_response.customerContextId || window.overrideContextId;
     
     if (customer_context_id) {
         handle_existing_customer(customer_context_id);

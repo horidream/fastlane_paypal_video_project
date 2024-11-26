@@ -9,6 +9,7 @@ let PAYPAL_API_BASE_URL = "https://api-m.sandbox.paypal.com";
 
 // Routes
 exports.handler = async (event) => {
+    console.log("Received event:", event.body);
     let request_body = JSON.parse(event.body);
     console.log("Received request:", request_body);
 
@@ -67,6 +68,7 @@ let handle_fastlane_auth = async () => {
         });
 
         let fastlane_auth_response_json = await fastlane_auth_response.json();
+        console.log("Fastlane Auth Response:", JSON.stringify(fastlane_auth_response_json, null, 2));
         return {
             statusCode: 200,
             body: JSON.stringify({ client_token: fastlane_auth_response_json.access_token })
